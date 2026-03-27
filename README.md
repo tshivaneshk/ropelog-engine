@@ -1,5 +1,9 @@
 # RopeLog Engine
 
+## Demo
+
+[![Watch Demo](assets/landing.png)](https://youtu.be/lWh0me9nK0U)
+
 A real-time log processing and visualization system built using a Treap-based Rope data structure. The system supports live log streaming, historical querying, and database-backed archival with a performant and scalable design.
 
 ---
