@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stored Logs - Ropes.SYS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+          }
+        }
+    </script>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="monitor-layout fade-in delay-1">
+        <div class="monitor-top">
+            <div class="monitor-title">STORED EXECUTION MONITOR</div>
+            <div class="monitor-controls">
+                <input type="number" id="limitInput" class="input-glass" placeholder="Limit" min="10" max="1000"
+                    value="100" style="width: 80px; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">
+                <input type="date" id="dateInput" class="input-glass"
+                    style="padding: 4px 10px; border-radius: 12px; font-size: 0.8rem;">
+                <button id="clearBtn" class="monitor-pill">Clear</button>
+                <button id="queryBtn" class="monitor-pill"
+                    style="border-color: var(--neon-cyan); color: var(--neon-cyan);">Query</button>
+                <button id="deleteBtn" class="monitor-pill"
+                    style="border-color: #ff4444; color: #ff4444;">Delete</button>
+                <div style="width: 1px; height: 20px; background: rgba(255,255,255,0.2); margin: 0 10px;"></div>
+                <a href="index.html" class="monitor-pill">Home</a>
+            </div>
+        </div>
+
+        <div class="monitor-screen" id="storedBody">
+            <div
+                style="text-align: center; color: var(--text-secondary); margin-top: 10vh; font-family: 'Courier New', monospace;">
+                System Ready. Awaiting parameter injection...
+            </div>
+        </div>
+
+        <div class="monitor-bottom">TEAM OM3N</div>
+    </div>
+
+    <div id="deleteModal" class="modal-overlay">
+        <div class="modal-content glass-panel" style="background: rgba(10, 15, 30, 0.9); width: 500px;">
+            <div class="modal-header">
+                <h3 style="color: #ff4444; font-family: 'Courier New', monospace; font-size: 1.2rem;">CONFIRM DELETION
+                </h3>
+                <button class="close-btn" id="closeDeleteModal">&times;</button>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 15px; margin-bottom: 20px;">
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem;">From (Date &amp; Time)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" id="deleteFromDate" class="input-glass" style="flex: 1;">
+                        <input type="time" step="1" id="deleteFromTime" class="input-glass" style="flex: 1;"
+                            placeholder="HH:MM:SS">
+                    </div>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 5px;">
+                    <label style="color: var(--text-secondary); font-size: 0.9rem;">To (Date &amp; Time)</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="date" id="deleteToDate" class="input-glass" style="flex: 1;">
+                        <input type="time" step="1" id="deleteToTime" class="input-glass" style="flex: 1;"
+                            placeholder="HH:MM:SS">
+                    </div>
+                </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button id="cancelDeleteBtn" class="monitor-pill">Cancel</button>
+                <button id="confirmDeleteBtn" class="monitor-pill"
+                    style="border-color: #ff4444; color: #ff4444; background: rgba(255, 68, 68, 0.1);">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+import { initGalaxy } from "./js/galaxy.js";
+
+const API_BASE = "http://10.12.69.195:8080";
+
+window.addEventListener("DOMContentLoaded", () => {
+
+    initGalaxy(false, true);
+
+    const storedBody = document.getElementById("storedBody");
+
+    const queryBtn = document.getElementById("queryBtn");
+    const clearBtn = document.getElementById("clearBtn");
+    const limitInput = document.getElementById("limitInput");
+    const dateInput = document.getElementById("dateInput");
+
+    const deleteBtn = document.getElementById("deleteBtn");
+    const deleteModal = document.getElementById("deleteModal");
+    const closeDeleteModal = document.getElementById("closeDeleteModal");
+    const cancelDeleteBtn = document.getElementById("cancelDeleteBtn");
+    const confirmDeleteBtn = document.getElementById("confirmDeleteBtn");
+
+    const deleteFromDate = document.getElementById("deleteFromDate");
+    const deleteFromTime = document.getElementById("deleteFromTime");
+    const deleteToDate = document.getElementById("deleteToDate");
+    const deleteToTime = document.getElementById("deleteToTime");
+
+
+    /* ================= FETCH STORED LOGS ================= */
+
+    async function fetchLogs() {
+
+        storedBody.innerHTML =
+        '<div style="text-align:center;color:var(--neon-cyan);margin-top:20px;font-family:monospace;">Querying Rope Backend...</div>';
+
+        let url;
+
+        if (dateInput.value) {
+            url = `${API_BASE}/api/date?d=${dateInput.value}`;
+        } else {
+            const count = parseInt(limitInput.value) || 100;
+            url = `${API_BASE}/api/last?n=${count}`;
+        }
+
+        try {
+
+            const response = await fetch(url);
+            const text = await response.text();
+
+            storedBody.innerHTML = "";
+
+            text.split("\n").forEach(line => {
+
+                if (!line.trim()) return;
+
+                const div = document.createElement("div");
+
+                div.style.fontFamily = "'Courier New', monospace";
+                div.style.fontSize = "0.95rem";
+                div.style.color = "#e0e0e0";
+                div.style.marginBottom = "6px";
+
+                div.textContent = line;
+
+                storedBody.appendChild(div);
+
+            });
+
+        } catch (err) {
+
+            storedBody.innerHTML =
+            '<div style="text-align:center;color:red;margin-top:20px;">Backend connection failed.</div>';
+
+            console.error(err);
+        }
+    }
+
+
+    /* ================= DELETE MODAL ================= */
+
+    deleteBtn.onclick = () => {
+        deleteModal.classList.add("active");
+    };
+
+    closeDeleteModal.onclick = () => {
+        deleteModal.classList.remove("active");
+    };
+
+    cancelDeleteBtn.onclick = () => {
+        deleteModal.classList.remove("active");
+    };
+
+
+    /* ================= DELETE LOGS ================= */
+
+    async function deleteLogs() {
+
+        const fDate = deleteFromDate.value;
+        const fTime = deleteFromTime.value || "00:00:00";
+        const tDate = deleteToDate.value;
+        const tTime = deleteToTime.value || "23:59:59";
+
+        if (!fDate || !tDate) {
+            alert("Please select From and To date");
+            return;
+        }
+
+        const start = `${fDate} ${fTime}`;
+        const end = `${tDate} ${tTime}`;
+
+        storedBody.innerHTML =
+        `<div style="text-align:center;color:#ff4444;margin-top:20px;font-family:monospace;">
+        Deleting logs from ${start} to ${end}...
+        </div>`;
+
+        deleteModal.classList.remove("active");
+
+        try {
+
+            const res = await fetch(
+                `${API_BASE}/api/delete?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+            );
+
+            const text = await res.text();
+
+            storedBody.innerHTML =
+            `<div style="text-align:center;color:#ff4444;margin-top:20px;font-family:monospace;">
+            ${text}
+            </div>`;
+
+        } catch (err) {
+
+            storedBody.innerHTML =
+            '<div style="text-align:center;color:red;margin-top:20px;">Delete request failed.</div>';
+
+            console.error(err);
+        }
+    }
+
+    confirmDeleteBtn.onclick = deleteLogs;
+
+
+    /* ================= BUTTON EVENTS ================= */
+
+    queryBtn.onclick = fetchLogs;
+
+    clearBtn.onclick = () => {
+
+        dateInput.value = "";
+        limitInput.value = "100";
+
+        storedBody.innerHTML =
+        '<div style="text-align:center;color:var(--text-secondary);margin-top:10vh;font-family:monospace;">Filters cleared. Awaiting parameter injection...</div>';
+    };
+
+});
+</script>
+</body>
+
+</html>

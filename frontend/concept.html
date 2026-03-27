@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Concepts - Ropes.SYS</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;500;700&display=swap"
+        rel="stylesheet">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+          }
+        }
+    </script>
+    <style>
+        .node {
+            display: inline-flex;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(157, 78, 221, 0.15);
+            border: 2px solid var(--neon-purple);
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #fff;
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 0 15px rgba(157, 78, 221, 0.3);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: scale(0);
+        }
+
+        .node:hover {
+            background: rgba(157, 78, 221, 0.6);
+            transform: scale(1.1) !important;
+            box-shadow: 0 0 25px rgba(157, 78, 221, 0.8);
+            border-color: #fff;
+        }
+
+        .leaf {
+            background: rgba(0, 245, 255, 0.15);
+            border-color: var(--neon-cyan);
+            border-radius: 8px;
+            width: auto;
+            padding: 0 16px;
+            box-shadow: 0 0 15px rgba(0, 245, 255, 0.3);
+        }
+
+        .leaf:hover {
+            background: rgba(0, 245, 255, 0.6);
+            color: #fff;
+            border-color: #fff;
+        }
+
+        .node.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .line {
+            position: absolute;
+            stroke: rgba(255, 255, 255, 0.15);
+            stroke-width: 2;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        .line.visible {
+            opacity: 1;
+            stroke: rgba(157, 78, 221, 0.6);
+        }
+
+        /* Tree Layout Simulation */
+        .level {
+            display: flex;
+            justify-content: center;
+            width: 100%;
+            margin-bottom: 3rem;
+        }
+
+        .node-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .leaf-str {
+            font-family: monospace;
+            font-size: 0.8rem;
+            margin-top: 8px;
+            color: var(--text-secondary);
+            opacity: 0;
+            transition: opacity 0.5s;
+        }
+
+        .leaf-str.visible {
+            opacity: 1;
+        }
+
+        .weight-label {
+            color: var(--neon-purple);
+            font-size: 0.85rem;
+            position: absolute;
+            top: -25px;
+            font-family: 'Orbitron', monospace;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 16px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace;
+            color: var(--neon-cyan);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .play-btn {
+            background: transparent;
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Orbitron';
+            transition: all 0.3s;
+            margin-top: 16px;
+        }
+
+        .play-btn:hover {
+            background: var(--neon-cyan);
+            color: #000;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="canvas-container"></div>
+
+    <div class="monitor-layout fade-in delay-1">
+        <div class="monitor-top">
+            <div class="monitor-title">CONCEPTUAL SIMULATION</div>
+            <div class="monitor-controls">
+                <a href="index.html" class="monitor-pill">Home</a>
+            </div>
+        </div>
+
+        <div class="monitor-screen" style="flex-direction: row; padding: 0; overflow: hidden;">
+            <div class="concept-grid">
+                <!-- Left Panel: Explanation -->
+                <div class="explain-panel"
+                    style="background: transparent; border-right: 1px solid rgba(255,255,255,0.05); padding: 30px;">
+                    <h2 class="orbitron" style="color: var(--neon-cyan); margin-bottom: 1rem;">What is a Rope?</h2>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary); line-height: 1.6;">
+                        Imagine you have a massive string, gigabytes in size. Standard strings use contiguous memory
+                        arrays. Inserting a character at the beginning takes <strong style="color: #fff;">O(N)</strong>
+                        time because everything shifts.
+                    </p>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary); line-height: 1.6;">
+                        A <strong>Rope</strong> represents a string as a binary tree of smaller strings. Inner nodes
+                        contain the <strong>weight</strong> (length) of the string in their entire left subtree.
+                    </p>
+
+                    <h3 class="orbitron" style="color: var(--neon-purple); margin: 2rem 0 1rem; font-size: 1.2rem;">
+                        Complexity</h3>
+                    <ul style="list-style: none; color: var(--text-secondary); line-height: 1.6;">
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #fff;">Index Search / CharAt:</strong>
+                            <span style="color: var(--term-green)">O(log N)</span>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #fff;">Concatenate / Merge:</strong>
+                            <span style="color: var(--term-green)">O(1)</span> or <span
+                                style="color: var(--term-green)">O(log N)</span>
+                        </li>
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #fff;">Split:</strong> <span
+                                style="color: var(--term-green)">O(log N)</span></li>
+                        <li style="margin-bottom: 0.5rem;"><strong style="color: #fff;">Insertion / Deletion:</strong>
+                            <span style="color: var(--term-green)">O(log N)</span>
+                        </li>
+                    </ul>
+
+                    <div class="ascii-art code-block">
+                        [Root: W:11]
+                        / \
+                        [N1: W:6] [N2: W:5]
+                        / \ / \
+                        "Hello " "World" "-Logs" ".txt"
+                    </div>
+                </div>
+
+                <!-- Right Panel: Interactive Vis -->
+                <div class="vis-panel" style="padding: 30px;">
+                    <h3 class="orbitron" style="margin-bottom: 8px;">Tree Traversal Visualization</h3>
+                    <p
+                        style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px; text-align: center;">
+                        Watch the Rope structure grow, merge, and evaluate weights.</p>
+
+                    <button class="play-btn" id="playAnimBtn">Simulate Node Growth & Merge</button>
+
+                    <div
+                        style="width: 100%; position: relative; display: flex; flex-direction: column; align-items: center; margin-top: 40px; height: 350px;">
+
+                        <!-- Level 0 -->
+                        <div class="level" style="gap: 0; z-index: 2;">
+                            <div class="node-group">
+                                <div class="node anim-node" id="rootNode" title="Root: Left branch total weight is 11">
+                                    <span class="weight-label">W:11</span>R
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- SVG Lines between Level 0 and 1 -->
+                        <svg width="100%" height="60" style="position: absolute; top: 24px; left: 0; z-index: 1;">
+                            <line class="line anim-line" id="l0-1" x1="50%" y1="0" x2="35%" y2="60" />
+                            <line class="line anim-line" id="l0-2" x1="50%" y1="0" x2="65%" y2="60" />
+                        </svg>
+
+                        <!-- Level 1 -->
+                        <div class="level" style="gap: 120px; z-index: 2;">
+                            <div class="node-group">
+                                <div class="node anim-node" id="n1" title="Left sub-tree. Weight 6"><span
+                                        class="weight-label">W:6</span>N1</div>
+                            </div>
+                            <div class="node-group">
+                                <div class="node anim-node" id="n2" title="Right sub-tree. Weight 5"><span
+                                        class="weight-label">W:5</span>N2</div>
+                            </div>
+                        </div>
+
+                        <!-- SVG Lines between Level 1 and Leaves -->
+                        <svg width="100%" height="60" style="position: absolute; top: 121px; left: 0; z-index: 1;">
+                            <line class="line anim-line" id="l1-1" x1="35%" y1="0" x2="25%" y2="60" />
+                            <line class="line anim-line" id="l1-2" x1="35%" y1="0" x2="45%" y2="60" />
+
+                            <line class="line anim-line" id="l2-1" x1="65%" y1="0" x2="55%" y2="60" />
+                            <line class="line anim-line" id="l2-2" x1="65%" y1="0" x2="75%" y2="60" />
+                        </svg>
+
+                        <!-- Level 2 (Leaves) -->
+                        <div class="level" style="gap: 40px; z-index: 2;">
+                            <div class="node-group" style="position: absolute; left: 25%; transform: translateX(-50%);">
+                                <div class="node leaf anim-node" id="leaf1">"Hello "</div>
+                                <div class="leaf-str anim-str">Len: 6</div>
+                            </div>
+                            <div class="node-group" style="position: absolute; left: 45%; transform: translateX(-50%);">
+                                <div class="node leaf anim-node" id="leaf2">"World"</div>
+                                <div class="leaf-str anim-str">Len: 5</div>
+                            </div>
+                            <div class="node-group" style="position: absolute; left: 55%; transform: translateX(-50%);">
+                                <div class="node leaf anim-node" id="leaf3">"-Logs"</div>
+                                <div class="leaf-str anim-str">Len: 5</div>
+                            </div>
+                            <div class="node-group" style="position: absolute; left: 75%; transform: translateX(-50%);">
+                                <div class="node leaf anim-node" id="leaf4">".txt"</div>
+                                <div class="leaf-str anim-str">Len: 4</div>
+                            </div>
+                        </div>
+
+                        <div id="outputStr"
+                            style="position: absolute; bottom: 0; background: rgba(0,0,0,0.6); padding: 16px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); width: 80%; text-align: center; opacity: 0; transition: opacity 1s;">
+                            <span style="color: var(--text-secondary); font-family: monospace;">Evaluated
+                                String:</span><br />
+                            <span
+                                style="color: var(--neon-cyan); font-family: monospace; font-size: 1.2rem; font-weight: bold;">"Hello
+                                World-Logs.txt"</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="monitor-bottom">TEAM OM3N</div>
+    </div>
+
+    <script type="module">
+        import { initGalaxy } from './js/galaxy.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGalaxy(false);
+
+            const playBtn = document.getElementById('playAnimBtn');
+            const nodes = document.querySelectorAll('.anim-node');
+            const lines = document.querySelectorAll('.anim-line');
+            const strs = document.querySelectorAll('.anim-str');
+            const output = document.getElementById('outputStr');
+
+            function simulateGrowth() {
+                // Reset
+                nodes.forEach(n => n.classList.remove('visible'));
+                lines.forEach(l => l.classList.remove('visible'));
+                strs.forEach(s => s.classList.remove('visible'));
+                output.style.opacity = '0';
+
+                // Sequence: Leaves -> Inner Nodes -> Root -> Evaluate
+                playBtn.disabled = true;
+                playBtn.textContent = 'Simulating Growth...';
+
+                setTimeout(() => { document.getElementById('leaf1').classList.add('visible'); strs[0].classList.add('visible'); }, 500);
+                setTimeout(() => { document.getElementById('leaf2').classList.add('visible'); strs[1].classList.add('visible'); }, 1000);
+
+                setTimeout(() => {
+                    document.getElementById('n1').classList.add('visible');
+                    document.getElementById('l1-1').classList.add('visible');
+                    document.getElementById('l1-2').classList.add('visible');
+                }, 1800);
+
+                setTimeout(() => { document.getElementById('leaf3').classList.add('visible'); strs[2].classList.add('visible'); }, 2600);
+                setTimeout(() => { document.getElementById('leaf4').classList.add('visible'); strs[3].classList.add('visible'); }, 3100);
+
+                setTimeout(() => {
+                    document.getElementById('n2').classList.add('visible');
+                    document.getElementById('l2-1').classList.add('visible');
+                    document.getElementById('l2-2').classList.add('visible');
+                }, 3900);
+
+                setTimeout(() => {
+                    document.getElementById('rootNode').classList.add('visible');
+                    document.getElementById('l0-1').classList.add('visible');
+                    document.getElementById('l0-2').classList.add('visible');
+                }, 4800);
+
+                setTimeout(() => {
+                    output.style.opacity = '1';
+                    playBtn.disabled = false;
+                    playBtn.textContent = 'Replay Sequence';
+                }, 6000);
+            }
+
+            playBtn.addEventListener('click', simulateGrowth);
+        });
+    </script>
+</body>
+
+</html>

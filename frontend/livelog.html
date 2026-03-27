@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Live Streams - Ropes.SYS</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+  </head>
+
+  <body>
+    <div id="canvas-container"></div>
+
+    <div class="monitor-layout fade-in delay-1">
+      <div class="monitor-top">
+        <div class="monitor-title">LIVE EXECUTION MONITOR</div>
+        <div class="monitor-controls">
+          <div class="live-indicator">
+            <div class="dot"></div>
+            <span style="font-family: monospace; color: white">Live</span>
+          </div>
+          <a href="index.html" class="monitor-pill">Home</a>
+        </div>
+      </div>
+
+      <div class="monitor-screen" id="logBody">
+        <!-- Logs injected dynamically -->
+      </div>
+
+      <div class="monitor-bottom">TEAM OM3N</div>
+    </div>
+
+    <script type="module">
+      import { initGalaxy } from "./js/galaxy.js";
+
+      const API_BASE = "http://10.12.69.195:8080";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initGalaxy(false, true);
+
+        const logBody = document.getElementById("logBody");
+
+        // Connect to Kali backend SSE
+        const evtSource = new EventSource(`${API_BASE}/api/live`);
+
+        evtSource.onmessage = function (event) {
+          const line = document.createElement("div");
+
+          line.style.fontFamily = "'Courier New', monospace";
+          line.style.fontSize = "0.95rem";
+          line.style.color = "#e0e0e0";
+          line.style.marginBottom = "6px";
+
+          line.textContent = event.data;
+
+          logBody.appendChild(line);
+
+          logBody.scrollTop = logBody.scrollHeight;
+
+          if (logBody.children.length > 500) {
+            logBody.removeChild(logBody.firstChild);
+          }
+        };
+
+        evtSource.onerror = function (err) {
+          console.error("Live connection error:", err);
+        };
+      });
+    </script>
+  </body>
+</html>

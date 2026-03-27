@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Database - Ropes.SYS</title>
+    <link rel="stylesheet" href="css/styles.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Orbitron:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+        }
+      }
+    </script>
+    <style>
+      .filter-form {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        text-align: left;
+      }
+
+      .filter-group label {
+        color: var(--neon-cyan);
+        font-family: "Orbitron", sans-serif;
+        font-size: 0.85rem;
+        letter-spacing: 1px;
+      }
+
+      .modal-body {
+        margin-bottom: 25px;
+        margin-top: 10px;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="canvas-container"></div>
+
+    <div class="monitor-layout fade-in delay-1">
+      <div class="monitor-top">
+        <div class="monitor-title">DATABASE MONITOR</div>
+        <div class="monitor-controls">
+          <button
+            id="clearBtn"
+            class="monitor-pill"
+            style="display: none; border-color: #ff4757; color: #ff4757"
+          >
+            Clear
+          </button>
+          <button
+            id="fetchBtn"
+            class="monitor-pill"
+            style="border-color: #00ff41; color: #00ff41"
+          >
+            Fetch
+          </button>
+          <button
+            id="openFilterBtn"
+            class="monitor-pill"
+            style="border-color: var(--neon-cyan); color: var(--neon-cyan)"
+          >
+            Filter
+          </button>
+          <div
+            style="
+              width: 1px;
+              height: 20px;
+              background: rgba(255, 255, 255, 0.2);
+              margin: 0 10px;
+            "
+          ></div>
+          <a href="index.html" class="monitor-pill">Home</a>
+        </div>
+      </div>
+
+      <div class="monitor-screen" id="dbBody">
+        <div
+          style="
+            text-align: center;
+            color: var(--text-secondary);
+            margin-top: 10vh;
+            font-family: &quot;Courier New&quot;, monospace;
+          "
+        >
+          Database link established. Awaiting query parameters...
+        </div>
+      </div>
+
+      <div class="monitor-bottom">TEAM OM3N</div>
+    </div>
+
+    <!-- Filter Modal -->
+    <div class="modal-overlay" id="filterModal">
+      <div
+        class="modal-content glass-panel"
+        style="
+          background: rgba(8, 6, 12, 0.95);
+          border-color: var(--neon-cyan);
+          width: 450px;
+        "
+      >
+        <div class="modal-header">
+          <h3
+            style="
+              color: var(--neon-cyan);
+              margin: 0;
+              font-family: &quot;Orbitron&quot;, sans-serif;
+            "
+          >
+            Database Filters
+          </h3>
+          <button class="close-btn" id="closeFilterBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="filter-form">
+            <div class="filter-group">
+              <label>PID</label>
+              <input
+                type="text"
+                id="pidInput"
+                class="input-glass"
+                placeholder="Process ID"
+              />
+            </div>
+            <div class="filter-group">
+              <label>From (Date & Time)</label>
+              <div style="display: flex; gap: 8px">
+                <input
+                  type="date"
+                  id="fromDateInput"
+                  class="input-glass"
+                  style="flex: 1"
+                />
+                <input
+                  type="time"
+                  id="fromTimeInput"
+                  class="input-glass"
+                  step="1"
+                  style="flex: 1"
+                />
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>To (Date & Time)</label>
+              <div style="display: flex; gap: 8px">
+                <input
+                  type="date"
+                  id="toDateInput"
+                  class="input-glass"
+                  style="flex: 1"
+                />
+                <input
+                  type="time"
+                  id="toTimeInput"
+                  class="input-glass"
+                  step="1"
+                  style="flex: 1"
+                />
+              </div>
+            </div>
+            <div class="filter-group">
+              <label>System ID</label>
+              <input
+                type="text"
+                id="sysIdInput"
+                class="input-glass"
+                placeholder="System Identifier (e.g. SYS-A)"
+              />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="cancelFilterBtn" class="monitor-pill">Cancel</button>
+          <button
+            id="applyFilterBtn"
+            class="glass-btn"
+            style="padding: 8px 20px; font-size: 0.85rem"
+          >
+            Appy Filters
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module">
+      import { initGalaxy } from "./js/galaxy.js";
+
+      document.addEventListener("DOMContentLoaded", () => {
+        initGalaxy(false, true);
+
+        const dbBody = document.getElementById("dbBody");
+        const openFilterBtn = document.getElementById("openFilterBtn");
+        const fetchBtn = document.getElementById("fetchBtn");
+        const clearBtn = document.getElementById("clearBtn");
+        const filterModal = document.getElementById("filterModal");
+        const closeFilterBtn = document.getElementById("closeFilterBtn");
+        const cancelFilterBtn = document.getElementById("cancelFilterBtn");
+        const applyFilterBtn = document.getElementById("applyFilterBtn");
+
+        // Inputs
+        const pidInput = document.getElementById("pidInput");
+        const fromDateInput = document.getElementById("fromDateInput");
+        const fromTimeInput = document.getElementById("fromTimeInput");
+        const toDateInput = document.getElementById("toDateInput");
+        const toTimeInput = document.getElementById("toTimeInput");
+        const sysIdInput = document.getElementById("sysIdInput");
+
+        function openModal() {
+          filterModal.classList.add("active");
+        }
+
+        function closeModal() {
+          filterModal.classList.remove("active");
+        }
+
+        openFilterBtn.addEventListener("click", openModal);
+        closeFilterBtn.addEventListener("click", closeModal);
+        cancelFilterBtn.addEventListener("click", closeModal);
+
+        async function performFetch() {
+          dbBody.innerHTML =
+            '<div style="text-align:center;color:var(--neon-purple);margin-top:20px;font-family:monospace;">Querying database...</div>';
+
+          let params = new URLSearchParams();
+
+          if (pidInput.value) params.append("pid", pidInput.value);
+
+          if (sysIdInput.value) params.append("sys", sysIdInput.value);
+
+          if (fromDateInput.value) {
+            let start =
+              fromDateInput.value + " " + (fromTimeInput.value || "00:00:00");
+            params.append("start", start);
+          }
+
+          if (toDateInput.value) {
+            let end =
+              toDateInput.value + " " + (toTimeInput.value || "23:59:59");
+            params.append("end", end);
+          }
+
+          let url = "http://10.12.69.195:8080/api/db";
+
+          if (params.toString().length > 0) url += "?" + params.toString();
+
+          try {
+            const res = await fetch(url);
+            const text = await res.text();
+
+            dbBody.innerHTML = "";
+
+            text.split("\n").forEach((line) => {
+              if (!line.trim()) return;
+
+              const div = document.createElement("div");
+
+              div.style.fontFamily = "'Courier New', monospace";
+              div.style.fontSize = "0.95rem";
+              div.style.color = "#e0e0e0";
+              div.style.marginBottom = "6px";
+
+              div.textContent = line;
+
+              dbBody.appendChild(div);
+            });
+          } catch (err) {
+            dbBody.innerHTML =
+              '<div style="text-align:center;color:red;margin-top:20px;">Database fetch failed</div>';
+
+            console.error(err);
+          }
+        }
+
+        applyFilterBtn.addEventListener("click", () => {
+          closeModal();
+          performFetch();
+        });
+
+        fetchBtn.addEventListener("click", () => {
+          performFetch();
+        });
+
+        clearBtn.addEventListener("click", () => {
+          pidInput.value = "";
+          fromDateInput.value = "";
+          fromTimeInput.value = "";
+          toDateInput.value = "";
+          toTimeInput.value = "";
+          sysIdInput.value = "";
+
+          clearBtn.style.display = "none";
+          dbBody.innerHTML =
+            '<div style="text-align: center; color: var(--text-secondary); margin-top: 10vh; font-family: monospace;">Filters cleared. Database link established. Awaiting query parameters...</div>';
+        });
+      });
+    </script>
+  </body>
+</html>
